@@ -1,0 +1,55 @@
+# Xcode User Data
+xcuserdata/
+*.xcuserdatad
+*.xcuserstate
+
+# Build Folders
+DerivedData/
+build/
+
+# macOS
+.DS_Store
+
+# Swift Package Manager
+.build/
+# Python build-tool bytecode
+__pycache__/
+*.pyc
+
+# Packaged applications and compiler output
+*.app/
+*.dSYM/
+*.xcarchive/
+*.dmg
+*.pkg
+*.o
+*.a
+
+# Local VM disks and generated Linux boot files
+*.raw
+*.raw.gz
+*.qcow2
+*.vmdk
+*.vdi
+vmlinuz
+initramfs
+
+# Local runtime state and temporary output
+.macosdocker/
+*.sock
+*.pid
+*.log
+*.tmp
+*.partial
+
+# Personal environment and signing material (keep example configuration)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+*.provisionprofile
+**/xcuserdata/
