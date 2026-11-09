@@ -12,7 +12,7 @@ Current project version **1.0.2** | Build **3** | Developed by **Kevin Tobler** 
 
 Run containers without installing Docker Desktop, OrbStack or a separate Linux distribution. The bundled Linux system uses Apple's Virtualization.framework for hardware-accelerated virtualization and VirtioFS for Mac folder sharing.
 
-[![Download macOSDocker](https://img.shields.io/badge/Download-macOSDocker_app-blue)](https://github.com/KeepCoolCH/macOSDocker/releases/tag/1.0.2)
+[![Download macOSDocker](https://img.shields.io/badge/Download-macOSDocker-blue)](https://github.com/KeepCoolCH/macOSDocker/releases/tag/1.0.2)
 
 ---
 
