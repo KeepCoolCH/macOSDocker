@@ -1,4 +1,4 @@
-![Hero Screenshot](images/macOSDocker-banner.jpg)
+![Hero Screenshot](images/macOSDocker-Banner.jpg)
 
 # 🐳 macOSDocker for macOS
 
