@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="macOSDocker/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" alt="macOSDocker app icon" width="128">
-</p>
+![Hero Screenshot](images/macOSDocker.jpg)
 
 # 🐳 macOSDocker for macOS
 
@@ -13,6 +11,8 @@ Current project version **1.0.2** | Build **3** | Developed by **Kevin Tobler** 
 🍎 **Apple Silicon · macOS 14.6 Sonoma or newer**
 
 Run containers without installing Docker Desktop, OrbStack or a separate Linux distribution. The bundled Linux system uses Apple's Virtualization.framework for hardware-accelerated virtualization and VirtioFS for Mac folder sharing.
+
+[![Download macOSDocker app for macOS](https://img.shields.io/badge/Download-macOSDocker_macOS_app-blue)](https://github.com/KeepCoolCH/macOSDocker/releases/tag/1.0.2)
 
 ---
 
@@ -317,3 +317,10 @@ For an Xcode archive, use `App archivieren.command`. See the dedicated documenta
 - [Signing and notarization](docs/SIGNING.md)
 
 Local build outputs, VM disks, downloaded tools and private signing files are excluded from Git. Publish the built app as a separate release artifact. Required bundled-tool license texts are included under `vendor/docker-tools` and in the built app.
+
+---
+
+## 🧑‍💻 Developer
+
+**Kevin Tobler**  
+🌐 [www.kevintobler.ch](https://www.kevintobler.ch)  
