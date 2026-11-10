@@ -102,6 +102,20 @@ Run containers without installing Docker Desktop, OrbStack or a separate Linux d
 
 ---
 
+## 📸 Screenshots
+
+![Screenshot](images/macOSDocker-containers.png)  
+![Screenshot](images/macOSDocker-images.png)  
+![Screenshot](images/macOSDocker-volumes.png)  
+![Screenshot](images/macOSDocker-networks.png)  
+![Screenshot](images/macOSDocker-builds.png)  
+![Screenshot](images/macOSDocker-backups.png)  
+![Screenshot](images/macOSDocker-shares.png)  
+![Screenshot](images/macOSDocker-commands.png)  
+![Screenshot](images/macOSDocker-runtime.png)  
+
+---
+
 ## ⚙️ Requirements
 
 - Apple Silicon Mac
