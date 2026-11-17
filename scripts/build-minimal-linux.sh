@@ -52,11 +52,13 @@ for applet in sh mount mkdir seq sleep switch_root; do ln -s busybox "/initroot/
 cp /source/guest/initramfs.sh /initroot/init
 chmod 755 /initroot/init
 python3 /select-modules.py /rootfs "$release" /initroot
+if find /initroot/lib/modules -name "*.ko*" -type f | read module; then
 mkdir -p /initroot/sbin /initroot/usr/lib/aarch64-linux-gnu
 cp /usr/bin/kmod /initroot/sbin/kmod
 ln -s kmod /initroot/sbin/modprobe
 ldd /usr/bin/kmod | awk '\''/=> \// {print $3} /^\s*\// {print $1}'\'' | while read library; do mkdir -p "/initroot$(dirname "$library")"; cp -L "$library" "/initroot$library"; done
 cp -L /lib/ld-linux-aarch64.so.1 /initroot/lib/
+fi
 (cd /initroot && find . -print0 | cpio --null -o --format=newc 2>/dev/null | gzip -1 > /output/initramfs)
 truncate -s 1024M /output/system.raw
 mkfs.ext4 -F -L macosdocker-root -d /rootfs /output/system.raw

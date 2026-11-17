@@ -14,9 +14,9 @@ mount --make-rshared /
 mkdir -p /etc/modprobe.d
 printf 'install macvlan /bin/false\n' > /etc/modprobe.d/macosdocker-macvlan.conf
 hostname macosdocker
-/sbin/modprobe virtio_net
-/sbin/modprobe virtiofs
-/sbin/modprobe vmw_vsock_virtio_transport
+for module in virtio_net virtiofs vmw_vsock_virtio_transport; do
+    [ -d "/sys/module/$module" ] || /sbin/modprobe "$module"
+done
 sysctl -w net.ipv4.ip_forward=1
 mkdir -p /macos /var/lib/macosdocker /var/lib/docker /var/lib/containerd /run/macosdocker /run/containerd
 kind=$(blkid -o value -s TYPE /dev/vdb || true)

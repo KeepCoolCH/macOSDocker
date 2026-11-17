@@ -121,6 +121,12 @@ final class SocketRelay: @unchecked Sendable {
     }
 }
 
+struct SocketHTTPFailure: LocalizedError {
+    let status: Int
+    let message: String
+    var errorDescription: String? { "HTTP \(status): \(message)" }
+}
+
 struct SocketHTTP: Sendable {
     let path: String
     func request(_ method: String = "GET", _ endpoint: String, body: Data? = nil, timeout: Int = 30, acceptedStatuses: Set<Int> = []) async throws -> Data {
@@ -186,7 +192,7 @@ struct SocketHTTP: Sendable {
         }
         guard (200..<300).contains(status) || acceptedStatuses.contains(status) else {
             let message = (try? JSONSerialization.jsonObject(with: payload) as? [String: Any])?["message"] as? String
-            throw AppFailure(message: "HTTP \(status): \(message ?? String(decoding: payload, as: UTF8.self))")
+            throw SocketHTTPFailure(status: status, message: message ?? String(decoding: payload, as: UTF8.self))
         }
         return payload
     }

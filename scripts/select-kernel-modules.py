@@ -36,7 +36,8 @@ def dependencies(names):
 
 
 keep = dependencies(required)
-for path in dependencies(boot):
+boot_files = dependencies(boot)
+for path in boot_files:
     destination = initial / path.relative_to(root)
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(path, destination)
@@ -44,7 +45,7 @@ for path in modules.rglob('*.ko*'):
     if path not in keep:
         path.unlink()
 for name in ('modules.builtin', 'modules.builtin.modinfo', 'modules.order'):
-    if (modules / name).exists():
+    if boot_files and (modules / name).exists():
         destination = initial / 'lib/modules' / release / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(modules / name, destination)
@@ -53,4 +54,5 @@ for module in modules.rglob('*.ko'):
         shutil.copyfileobj(source, output)
     module.unlink()
 subprocess.run(['depmod', '-b', str(root), release], check=True)
-subprocess.run(['depmod', '-b', str(initial), release], check=True)
+if boot_files:
+    subprocess.run(['depmod', '-b', str(initial), release], check=True)

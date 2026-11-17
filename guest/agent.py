@@ -7,6 +7,7 @@ import json
 import os
 import re
 import select
+import signal
 import socket
 import subprocess
 import threading
@@ -20,6 +21,7 @@ import mac_binds
 import network_policy
 import resolver_config
 import docker_socket
+import runtime_service
 from pathlib import Path
 
 REGISTRY = Path('/var/lib/macosdocker/shares.json')
@@ -37,6 +39,21 @@ def run(*args):
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip() or 'Command failed')
     return result.stdout.strip()
+
+
+def prepare_poweroff():
+    with STARTUP_LOCK:
+        pid = runtime_service.process('docker')
+        if pid:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            deadline = time.monotonic() + 3
+            while runtime_service.process('docker') and time.monotonic() < deadline:
+                time.sleep(0.01)
+        os.sync()
+        return {'prepared': True, 'dockerStopped': runtime_service.process('docker') is None}
 
 
 def network_configure(config):
@@ -399,6 +416,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.respond(200, engine_update.check())
             elif self.path == '/engine-update':
                 self.respond(202, engine_update.start())
+            elif self.path == '/prepare-poweroff':
+                self.respond(200, prepare_poweroff())
             elif self.path == '/shutdown':
                 self.respond(200, {'stopping': True})
                 subprocess.Popen(['/sbin/poweroff'])

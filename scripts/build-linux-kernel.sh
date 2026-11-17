@@ -5,6 +5,7 @@ VERSION=${KERNEL_VERSION:-7.3.1}
 OUTPUT=${1:-"$ROOT/build/linux-kernel-$VERSION"}
 JOBS=${KERNEL_JOBS:-4}
 CONFIG=${KERNEL_CONFIG:-"$ROOT/guest/kernel.config"}
+PATCHES=${KERNEL_PATCH_DIR:-"$ROOT/guest/kernel-patches"}
 case "$VERSION" in *[!0-9.]*|'') exit 2;; esac
 case "$JOBS" in *[!0-9]*|'') exit 2;; esac
 mkdir -p "$OUTPUT"
@@ -13,9 +14,10 @@ CONTAINER=$(docker create --platform linux/arm64 debian:bookworm-slim@sha256:99c
 trap 'docker rm -f "$CONTAINER" >/dev/null 2>&1 || true' EXIT
 docker start "$CONTAINER" >/dev/null
 docker cp "$CONFIG" "$CONTAINER:/kernel.config"
+if [ -d "$PATCHES" ]; then docker cp "$PATCHES" "$CONTAINER:/kernel-patches"; fi
 docker exec -e KERNEL_VERSION="$VERSION" -e KERNEL_JOBS="$JOBS" "$CONTAINER" sh -ec '
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential bc bison flex perl libssl-dev libelf-dev xz-utils curl ca-certificates kmod
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential bc bison flex perl libssl-dev libelf-dev xz-utils curl ca-certificates kmod patch
 mkdir -p /kernel /output /modules
 cd /kernel
 major=${KERNEL_VERSION%%.*}
@@ -26,16 +28,25 @@ test -s expected.sha256
 sha256sum -c expected.sha256
 tar -xf linux.tar.xz
 cd "linux-$KERNEL_VERSION"
+for patchfile in /kernel-patches/*.patch; do
+    [ -f "$patchfile" ] || continue
+    patch --batch --fuzz=0 -p1 < "$patchfile"
+done
 cp /kernel.config .config
 scripts/config --set-str LOCALVERSION "-macosdocker" --disable LOCALVERSION_AUTO --set-str MODULE_SIG_KEY certs/signing_key.pem --set-str SYSTEM_TRUSTED_KEYS "" --set-str SYSTEM_REVOCATION_KEYS ""
 make olddefconfig
 make -j"$KERNEL_JOBS" Image modules
-make INSTALL_MOD_PATH=/modules modules_install
+make INSTALL_MOD_PATH=/modules INSTALL_MOD_STRIP=1 modules_install
 release=$(make -s kernelrelease)
 cp arch/arm64/boot/Image /output/vmlinuz
 cp .config /output/kernel.config
 printf "%s\n" "$release" > /output/kernel-version
 cp /kernel/expected.sha256 /output/kernel-source.sha256
+mkdir -p /output/kernel-patches
+for patchfile in /kernel-patches/*.patch; do
+    [ -f "$patchfile" ] || continue
+    cp "$patchfile" /output/kernel-patches/
+done
 tar -C /modules -czf /output/modules.tar.gz lib/modules
 '
 docker cp "$CONTAINER:/output/." "$OUTPUT/"

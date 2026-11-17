@@ -29,3 +29,9 @@ Docker volumes live on the data disk and can be opened in Finder through Samba. 
 ## Project contents
 
 The project contains production sources, resources, build and release tools, and required license texts. Tests, historical diagnostic reports and test integration are archived outside the project directory and are not compiled into the app.
+
+## Shutdown
+
+Normal stop, restart and app termination first disconnect the SMB mounts managed by the app. If a mount cannot be cleanly disconnected, the VM remains running. The guest then sends SIGTERM to Docker Engine so Docker initiates its normal parallel container shutdown without marking containers as manually stopped. The guest waits up to three seconds for Docker to exit, then calls sync before acknowledging preparation. The app subsequently powers off the VM through Virtualization.framework. Preparation failures prevent automatic power-off; Force Stop remains available. The three-second window is a best-effort opportunity for applications to exit, not a guarantee: remaining applications may retain unwritten data or continue writing during sync. Sync only flushes data already submitted to the kernel and can take longer than the grace window. Force Stop bypasses this preparation. The full guest shutdown service remains available for explicit guest-side shutdown.
+
+Guests that return HTTP 404 for `/prepare-poweroff` use the legacy `/shutdown` endpoint instead. The app waits up to 40 seconds for shutdown before allowing an image replacement. Other preparation errors still prevent automatic power-off. This compatibility path allows an older installed image to be updated without a forced stop.

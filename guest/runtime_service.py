@@ -9,6 +9,7 @@ import sys
 import time
 
 RUN = Path('/run/macosdocker')
+STOP_POLL_INTERVAL = 0.01
 SERVICES = {
     'containerd': ['containerd', '--config', '/etc/containerd/config.toml'],
     'docker': ['dockerd'],
@@ -40,13 +41,12 @@ def stop(name):
         os.kill(pid, signal.SIGTERM)
         deadline = time.monotonic() + 30
         while process(name) and time.monotonic() < deadline:
-            time.sleep(0.05)
+            time.sleep(STOP_POLL_INTERVAL)
         if process(name):
             os.kill(pid, signal.SIGKILL)
-            for _ in range(100):
-                if not process(name):
-                    break
-                time.sleep(0.05)
+            deadline = time.monotonic() + 5
+            while process(name) and time.monotonic() < deadline:
+                time.sleep(STOP_POLL_INTERVAL)
         if process(name):
             raise RuntimeError('Service did not stop: ' + name)
     (RUN / (name + '.json')).unlink(missing_ok=True)
@@ -143,13 +143,17 @@ def main():
             else:
                 fcntl.flock(lock, fcntl.LOCK_EX)
             return network(action)
-    if name not in SERVICES or action not in ('start', 'stop', 'status'):
+    if not ((name == 'engine' and action == 'stop') or (name in SERVICES and action in ('start', 'stop', 'status'))):
         raise ValueError('Unknown service or action')
     with open(RUN / 'engine.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        if action == 'status':
+        if name == 'engine':
+            stop('docker')
+            stop('containerd')
+        elif action == 'status':
             return 0 if process(name) else 1
-        (start if action == 'start' else stop)(name)
+        else:
+            (start if action == 'start' else stop)(name)
     return 0
 
 

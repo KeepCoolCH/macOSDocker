@@ -4,7 +4,7 @@
 
 **macOSDocker** is a native macOS app for running and managing Docker containers on Apple Silicon. It includes its own lightweight Linux VM, Docker Engine, Docker CLI, Compose and Buildx, with a dashboard and quick controls in the menu bar.
 
-Current project version **1.0.2** | Build **3** | Developed by **Kevin Tobler** 🌐 [www.kevintobler.ch](https://kevintobler.ch)
+Current project version **1.0.3** | Build **4** | Developed by **Kevin Tobler** 🌐 [www.kevintobler.ch](https://kevintobler.ch)
 
 ---
 
@@ -12,7 +12,7 @@ Current project version **1.0.2** | Build **3** | Developed by **Kevin Tobler** 
 
 Run containers without installing Docker Desktop, OrbStack or a separate Linux distribution. The bundled Linux system uses Apple's Virtualization.framework for hardware-accelerated virtualization and VirtioFS for Mac folder sharing.
 
-[![Download macOSDocker](https://img.shields.io/badge/Download-macOSDocker-blue)](https://github.com/KeepCoolCH/macOSDocker/releases/tag/1.0.2)
+[![Download macOSDocker](https://img.shields.io/badge/Download-macOSDocker-blue)](https://github.com/KeepCoolCH/macOSDocker/releases/tag/1.0.3)
 
 ---
 

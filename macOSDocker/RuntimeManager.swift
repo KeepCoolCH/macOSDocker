@@ -85,8 +85,6 @@ final class RuntimeManager: NSObject, ObservableObject, VZVirtualMachineDelegate
     private var terminalMountServer: TerminalMountServer?
     private var guestMountServer: GuestMountServer?
     let macBindQueue = MacBindQueue()
-    private var shutdownWaiter: (id: UUID, continuation: CheckedContinuation<Bool, Never>)?
-    private var shutdownTimeout: Task<Void, Never>?
     private var logHandle: FileHandle?
     private var inputPipe: Pipe?
     private var generation = UUID()
@@ -552,48 +550,31 @@ final class RuntimeManager: NSObject, ObservableObject, VZVirtualMachineDelegate
         defer { busy = false }
         do { try await volumeFinder.disconnect() }
         catch { stopping = false; throw error }
-        poll?.cancel()
+        let previousState = state
         state = String(localized: "Wird heruntergefahren …")
-        _ = try? await control.request("POST", "/shutdown", body: Data("{}".utf8), timeout: 5)
-        let stopped = await waitForShutdown(machine)
-        try Task.checkCancellation()
-        if stopped {
-            if vm === machine { cleanup() }
-            state = String(localized: "Gestoppt")
-            return
-        }
-        state = String(localized: "Herunterfahren dauert länger")
-        throw AppFailure(message: String(localized: "Linux fährt noch herunter. Konsole prüfen oder ausdrücklich hart stoppen."))
-    }
-
-    private func waitForShutdown(_ machine: VZVirtualMachine) async -> Bool {
-        let id = UUID()
-        return await withTaskCancellationHandler {
-            await withCheckedContinuation { continuation in
-                if vm !== machine || machine.state == .stopped {
-                    continuation.resume(returning: true)
-                } else if Task.isCancelled {
-                    continuation.resume(returning: false)
-                } else {
-                    shutdownWaiter = (id, continuation)
-                    shutdownTimeout = Task { [weak self] in
-                        do { try await Task.sleep(for: .seconds(40)) }
-                        catch { return }
-                        self?.finishShutdownWait(stopped: false, id: id)
+        do {
+            if vm === machine, machine.state != .stopped {
+                do {
+                    _ = try await control.request("POST", "/prepare-poweroff", body: Data("{}".utf8), timeout: 45)
+                    if vm === machine, machine.state != .stopped { try await machine.stop() }
+                } catch let failure as SocketHTTPFailure where failure.status == 404 {
+                    _ = try await control.request("POST", "/shutdown", body: Data("{}".utf8), timeout: 5)
+                    let deadline = ContinuousClock.now.advanced(by: .seconds(40))
+                    while vm === machine, machine.state != .stopped, ContinuousClock.now < deadline {
+                        try await Task.sleep(for: .milliseconds(10))
+                    }
+                    guard vm !== machine || machine.state == .stopped else {
+                        throw AppFailure(message: String(localized: "Linux fährt noch herunter. Konsole prüfen oder ausdrücklich hart stoppen."))
                     }
                 }
             }
-        } onCancel: {
-            Task { @MainActor [weak self] in self?.finishShutdownWait(stopped: false, id: id) }
+        } catch {
+            stopping = false
+            state = previousState
+            throw error
         }
-    }
-
-    private func finishShutdownWait(stopped: Bool, id: UUID? = nil) {
-        guard let waiter = shutdownWaiter, id == nil || id == waiter.id else { return }
-        shutdownWaiter = nil
-        shutdownTimeout?.cancel()
-        shutdownTimeout = nil
-        waiter.continuation.resume(returning: stopped)
+        if vm === machine { cleanup() }
+        state = String(localized: "Gestoppt")
     }
 
     func forceStop() async throws {
@@ -612,7 +593,6 @@ final class RuntimeManager: NSObject, ObservableObject, VZVirtualMachineDelegate
         state = String(localized: "Gestoppt")
     }
     private func cleanup() {
-        finishShutdownWait(stopped: true)
         tcpForwarder.stop()
         ipv6TCPForwarder.stop()
         forwardedTCPPorts = []
